@@ -1,0 +1,29 @@
+{
+  "name": "smartmap",
+  "version": "1.0.0",
+  "description": "Fast multiple key map",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmorts/smartmap.git"
+  },
+  "keywords": [
+    "map",
+    "smartmap",
+    "multiple-key",
+    "keys",
+    "fast"
+  ],
+  "author": "Tomas Stropus",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/emmorts/smartmap/issues"
+  },
+  "homepage": "https://github.com/emmorts/smartmap#readme",
+  "devDependencies": {
+    "chai": "^3.4.1"
+  }
+}
