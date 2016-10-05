@@ -10,9 +10,9 @@
     }
     this.indices = Array.prototype.slice.call(arguments);
     this.length = 0;
-    this._head = null;
-    this._tail = null;
-    this._position = null;
+    this._head = {};
+    this._tail = {};
+    this._position = {};
     this._keys = {};
     this._debug = true;
   }
@@ -30,12 +30,14 @@
           var key = object[index];
           
           if (this.length === 0) {
-            this._head = this._tail = node;
+            this._head[index] = this._tail[index] = node;
+            node.p = node.n = null;
             this.reset();
           } else {
-            node.p = this._tail;
-            this._tail.n = node;
-            this._tail = node;
+            node.p = this._tail[index];
+            node.n = null;
+            this._tail[index].n = node;
+            this._tail[index] = node;
           }
           
           this._keys[index][key] = node;
@@ -85,20 +87,29 @@
   }
   
   SmartMap.prototype.reset = function () {
-    this._position = { n: this._head };
+    this._position = this.indices.reduce(function (pos, index) {
+      if (index in this._head) {
+        pos[index] = { n: this._head[index] };
+      } else {
+        pos[index] = { n : null };
+      }
+      return pos;
+    }.bind(this), {});
   }
   
   SmartMap.prototype.empty = function () {
     this._keys = {};
-    this._head = this._tail = this._position = null;
+    this._head = this._tail = {};
     this.length = 0;
+    this.reset();
   };
   
   SmartMap.prototype.forEach = function (fn, thisArg) {
     var tmp, index = 0;
     
     if (this.length) {
-      while (tmp = _next.call(this)) {
+      var iterateBy = this.indices[0];
+      while (tmp = _next.call(this, iterateBy)) {
         if (thisArg) {
           fn.call(thisArg, tmp.v, index);
         } else {
@@ -115,7 +126,8 @@
     var tmp, result;
     
     if (this.length) {
-      while (tmp = _next.call(this)) {
+      var iterateBy = this.indices[0];
+      while (tmp = _next.call(this, iterateBy)) {
         var passes = thisArg ? predicate.call(this, tmp.v) : predicate(tmp.v);
         if (passes) {
           result = tmp.v;
@@ -138,8 +150,8 @@
     return validatedProperties === this.indices.length;
   }
   
-  function _next() {
-    return this._position = this._position.n;
+  function _next(index) {
+    return this._position[index] = this._position[index].n;
   }
   
   function _warn(message) {
