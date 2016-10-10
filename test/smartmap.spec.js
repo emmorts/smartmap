@@ -127,6 +127,33 @@ describe('#SmartMap', function () {
     });
   });
   
+  it('should iterate through the map after removing an element', function () {
+    var map = new SmartMap('id');
+    
+    var expectedObjects = [1, 2, 3].map(function (num) {
+      var obj = {
+        id: num,
+        value: num * num
+      };
+      map.add(obj);
+      return obj;
+    });
+
+    map.delete(3, 'id');
+
+    var iterationsCompleted = 0;
+    map.forEach(function (mapObject) {
+      var expectedObject = expectedObjects.find(function (object) {
+        return object.id === mapObject.id
+      });
+
+      expect(mapObject).to.be.equal(expectedObject);
+
+      iterationsCompleted++;
+    });
+    expect(iterationsCompleted).to.be.equal(expectedObjects.length - 1);
+  });
+  
   it('should find an object in the map', function () {
     var map = new SmartMap('id');
     

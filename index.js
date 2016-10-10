@@ -75,6 +75,7 @@
 
         if (node.p) node.p.n = node.n;
         if (node.n) node.n.p = node.p;
+        if (node === this._tail[index]) this._tail[index] = this._tail[index].p; 
 
         this._keys[index][key] = undefined;
         this.length--;
