@@ -31,11 +31,11 @@
           
           if (this.length === 0) {
             this._head[index] = this._tail[index] = node;
-            node.p = node.n = null;
+            node.p = node.n = undefined;
             this.reset();
           } else {
             node.p = this._tail[index];
-            node.n = null;
+            node.n = undefined;
             this._tail[index].n = node;
             this._tail[index] = node;
           }
@@ -76,8 +76,10 @@
         if (node.p) node.p.n = node.n;
         if (node.n) node.n.p = node.p;
 
-        this._keys[index][key] = null;
+        this._keys[index][key] = undefined;
         this.length--;
+        
+        delete this._keys[index][key];
       }
 
       return object;
@@ -91,7 +93,7 @@
       if (index in this._head) {
         pos[index] = { n: this._head[index] };
       } else {
-        pos[index] = { n : null };
+        pos[index] = { n : undefined };
       }
       return pos;
     }.bind(this), {});

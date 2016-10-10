@@ -1,6 +1,6 @@
 {
   "name": "smartmap",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Fast multiple key map",
   "main": "index.js",
   "scripts": {

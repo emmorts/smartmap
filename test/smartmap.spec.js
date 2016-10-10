@@ -49,6 +49,42 @@ describe('#SmartMap', function () {
     
   });
   
+  it('should remove an object from the map', function () {
+    var map = new SmartMap('id');
+    
+    var object = null, expectedObject = { id: 4, value: 6 };
+
+    map.add(expectedObject);
+    object = map.get(expectedObject.id, 'id');
+
+    expect(object).to.be.equal(expectedObject);
+    expect(map.length).to.be.equal(1);
+
+    map.delete(expectedObject.id, 'id');
+    object = map.get(expectedObject.id, 'id');
+
+    expect(object).to.be.equal(undefined);
+    expect(map.length).to.be.equal(0);
+  });
+  
+  it('should remove an object from a map with multiple indices', function () {
+    var map = new SmartMap('foo', 'bar');
+    
+    var expectedObject = { foo: 'a', bar: 'b' }, object = null;
+
+    map.add(expectedObject);
+    object = map.get(expectedObject.foo, 'foo');
+
+    expect(object).to.be.equal(expectedObject);
+    expect(map.length).to.be.equal(1);
+
+    map.delete(expectedObject.foo, 'foo');
+    object = map.get(expectedObject.foo, 'foo');
+
+    expect(object).to.be.equal(undefined);
+    expect(map.length).to.be.equal(0);
+  });
+  
   it('should iterate through the map', function () {
     var map = new SmartMap('id');
     
