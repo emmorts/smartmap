@@ -10,16 +10,14 @@
     }
     this.indices = Array.prototype.slice.call(arguments);
     this.length = 0;
-    this._head = {};
-    this._tail = {};
-    this._position = {};
+    this._data = {};
     this._keys = {};
     this._debug = true;
   }
   
   SmartMap.prototype.add = function (object) {
     if (this.indices.length > 0) {
-      var node = { v: Object.seal(object) };
+      var sealedObject = Object.seal(object);
       
       this.indices.forEach(function (index) {
         if (!(index in this._keys)) {
@@ -28,20 +26,13 @@
         
         if (index in object) {
           var key = object[index];
-          
-          if (this.length === 0) {
-            this._head[index] = this._tail[index] = node;
-            node.p = node.n = undefined;
-            this.reset();
-          } else {
-            node.p = this._tail[index];
-            node.n = undefined;
-            this._tail[index].n = node;
-            this._tail[index] = node;
+
+          if (!this._data[index]) {
+            this._data[index] = [];
           }
-          
-          this._keys[index][key] = node;
-          
+
+          this._data[index].push(sealedObject);
+          this._keys[index][key] = sealedObject;
         } else {
           _warn("Index `" + index + "` doesn't exist in given object.");
         }
@@ -54,7 +45,7 @@
   SmartMap.prototype.get = function (key, index) {
     if (index in this._keys) {
       if (key in this._keys[index]) {
-        return this._keys[index][key].v;
+        return this._keys[index][key];
       } else {
         _warn("Undefined key `" + key + "` in index `" + index + "`.");
       }
@@ -67,95 +58,46 @@
   
   SmartMap.prototype.delete = function (key, index) {
     if (index in this._keys && key in this._keys[index]) {
-      var object;
       var node = this._keys[index][key];
+      var indexOfNode = this._data[index].indexOf(node);
 
-      if (node) {
-        object = node.v;
-
-        if (node.p) node.p.n = node.n;
-        if (node.n) node.n.p = node.p;
-        if (node === this._tail[index]) this._tail[index] = this._tail[index].p; 
-
-        this._keys[index][key] = undefined;
-        this.length--;
+      if (indexOfNode !== -1) {
+        this._data[index].splice(indexOfNode, 1);
         
         delete this._keys[index][key];
+
+        this.length--;
       }
 
-      return object;
+      return node;
     }
     
     return undefined;
   }
   
-  SmartMap.prototype.reset = function () {
-    this._position = this.indices.reduce(function (pos, index) {
-      if (index in this._head) {
-        pos[index] = { n: this._head[index] };
-      } else {
-        pos[index] = { n : undefined };
-      }
-      return pos;
-    }.bind(this), {});
-  }
-  
   SmartMap.prototype.empty = function () {
     this._keys = {};
-    this._head = this._tail = {};
+    this._data = {};
     this.length = 0;
-    this.reset();
   };
   
   SmartMap.prototype.forEach = function (fn, thisArg) {
-    var tmp, index = 0;
-    
     if (this.length) {
       var iterateBy = this.indices[0];
-      while (tmp = _next.call(this, iterateBy)) {
-        if (thisArg) {
-          fn.call(thisArg, tmp.v, index);
-        } else {
-          fn(tmp.v, index);
-        }
-        index++;
-      }
-      
-      this.reset();
+
+      this._data[iterateBy].forEach(fn, thisArg || this);
     }
   }
   
   SmartMap.prototype.find = function (predicate, thisArg) {
-    var tmp, result;
-    
     if (this.length) {
       var iterateBy = this.indices[0];
-      while (tmp = _next.call(this, iterateBy)) {
-        var passes = thisArg ? predicate.call(this, tmp.v) : predicate(tmp.v);
-        if (passes) {
-          result = tmp.v;
-          this.reset();
-          break;
-        }
-      }
+
+      return this._data[iterateBy].find(predicate, thisArg || this);
     }
-    
-    return result;
   }
   
   return SmartMap;
-  
-  function _validateObject(object) {
-    var validatedProperties = 0;
-    for (var property in object) {
-      if (~this.indices.indexOf(property)) validatedProperties++;
-    }
-    return validatedProperties === this.indices.length;
-  }
-  
-  function _next(index) {
-    return this._position[index] = this._position[index].n;
-  }
   
   function _warn(message) {
     if (this._debug) {
