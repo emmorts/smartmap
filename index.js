@@ -12,8 +12,9 @@
     this.length = 0;
     this._data = {};
     this._keys = {};
-    this._debug = true;
-  }
+    this._eventHandlers = {};
+    this._debug = false;
+  };
   
   SmartMap.prototype.add = function (object) {
     if (this.indices.length > 0) {
@@ -33,28 +34,30 @@
 
           this._data[index].push(sealedObject);
           this._keys[index][key] = sealedObject;
+
+          this._fire('added', object);
         } else {
-          _warn("Index `" + index + "` doesn't exist in given object.");
+          this._warn("Index `" + index + "` doesn't exist in given object.");
         }
       }.bind(this));
       
       this.length++;
     }
-  }
+  };
   
   SmartMap.prototype.get = function (key, index) {
     if (index in this._keys) {
       if (key in this._keys[index]) {
         return this._keys[index][key];
       } else {
-        _warn("Undefined key `" + key + "` in index `" + index + "`.");
+        this._warn("Undefined key `" + key + "` in index `" + index + "`.");
       }
     } else {
-      _warn("Undefined index `" + index + "`.");
+      this._warn("Undefined index `" + index + "`.");
     }
     
     return undefined;
-  }
+  };
   
   SmartMap.prototype.delete = function (key, index) {
     if (index in this._keys && key in this._keys[index]) {
@@ -67,18 +70,22 @@
         delete this._keys[index][key];
 
         this.length--;
+
+        this._fire('deleted', node);
       }
 
       return node;
     }
     
     return undefined;
-  }
+  };
   
   SmartMap.prototype.empty = function () {
     this._keys = {};
     this._data = {};
     this.length = 0;
+
+    _fire('cleared');
   };
   
   SmartMap.prototype.forEach = function (fn, thisArg) {
@@ -87,7 +94,7 @@
 
       this._data[iterateBy].forEach(fn, thisArg || this);
     }
-  }
+  };
   
   SmartMap.prototype.find = function (predicate, thisArg) {
     if (this.length) {
@@ -95,13 +102,28 @@
 
       return this._data[iterateBy].find(predicate, thisArg || this);
     }
-  }
+  };
+
+  SmartMap.prototype.on = function (name, listener) {
+    if (!(name in this._eventHandlers) || !(this._eventHandlers[name] instanceof Array)) {
+      this._eventHandlers[name] = [];
+    }
+    this._eventHandlers[name].push(listener);
+
+    return this;
+  };
   
-  return SmartMap;
+  SmartMap.prototype._fire = function (name, options) {
+    if (name in this._eventHandlers && this._eventHandlers[name].length > 0) {
+      this._eventHandlers[name].forEach(handler => handler(options));
+    }
+  };
   
-  function _warn(message) {
+  SmartMap.prototype._warn = function (message) {
     if (this._debug) {
       console.warn(message);
     }
-  }
+  };
+  
+  return SmartMap;
 });
