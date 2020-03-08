@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true
+  },
+  "include": [
+    "lib"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "typedocOptions": {
+    "name": "SmartMap",
+    "out": "./docs",
+    "mode": "modules",
+    "inputFiles": [
+      "./lib"
+    ],
+    "exclude": "**/*+(index|.spec|.e2e).ts",
+    "excludePrivate": true,
+    "excludeNotExported": true,
+    "excludeProtected": true
+  }
+}
