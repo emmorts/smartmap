@@ -15,7 +15,7 @@
   "typedocOptions": {
     "name": "SmartMap",
     "out": "./docs",
-    "mode": "modules",
+    "mode": "file",
     "inputFiles": [
       "./lib"
     ],

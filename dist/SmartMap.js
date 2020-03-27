@@ -12,7 +12,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     privateMap.set(receiver, value);
     return value;
 };
-var _indices, _length, _data, _keys, _eventHandlers, _debug;
+var _indices, _length, _data, _keys, _eventHandlers, __iterateBy;
 Object.defineProperty(exports, "__esModule", { value: true });
 class SmartMap {
     constructor(...indices) {
@@ -21,17 +21,39 @@ class SmartMap {
         _data.set(this, {});
         _keys.set(this, {});
         _eventHandlers.set(this, {});
-        _debug.set(this, false);
+        __iterateBy.set(this, void 0);
         if (!indices || !indices.length) {
             throw new Error('Unable to initialize SmartMap, no indices provided.');
         }
         __classPrivateFieldGet(this, _indices).push(...indices);
+        __classPrivateFieldSet(this, __iterateBy, __classPrivateFieldGet(this, _indices)[0]);
+    }
+    [(_indices = new WeakMap(), _length = new WeakMap(), _data = new WeakMap(), _keys = new WeakMap(), _eventHandlers = new WeakMap(), __iterateBy = new WeakMap(), Symbol.iterator)]() {
+        const indexedArray = __classPrivateFieldGet(this, _data)[__classPrivateFieldGet(this, __iterateBy)];
+        let iteratorCurrentIndex = 0;
+        return {
+            next() {
+                if (iteratorCurrentIndex < indexedArray.length) {
+                    return { value: indexedArray[iteratorCurrentIndex], done: false };
+                }
+                else {
+                    return { value: null, done: true };
+                }
+            }
+        };
     }
     get indices() {
         return __classPrivateFieldGet(this, _indices);
     }
     get length() {
         return __classPrivateFieldGet(this, _length);
+    }
+    iterateBy(index) {
+        if (index in __classPrivateFieldGet(this, _indices)) {
+            __classPrivateFieldSet(this, __iterateBy, index);
+            return this[Symbol.iterator]();
+        }
+        throw new Error(`Map is not indexed by '${index}'`);
     }
     add(object) {
         const sealedObject = Object.seal(object);
@@ -87,19 +109,6 @@ class SmartMap {
         __classPrivateFieldSet(this, _length, 0);
         this.fire('cleared');
     }
-    forEach(callbackfn, thisArg) {
-        if (__classPrivateFieldGet(this, _length)) {
-            const iterateBy = __classPrivateFieldGet(this, _indices)[0];
-            __classPrivateFieldGet(this, _data)[iterateBy].forEach(callbackfn, thisArg || this);
-        }
-    }
-    find(predicate, thisArg) {
-        if (__classPrivateFieldGet(this, _length)) {
-            var iterateBy = __classPrivateFieldGet(this, _indices)[0];
-            return __classPrivateFieldGet(this, _data)[iterateBy].find(predicate, thisArg || this);
-        }
-        return undefined;
-    }
     on(name, listener) {
         if (!(name in __classPrivateFieldGet(this, _eventHandlers)) || !(__classPrivateFieldGet(this, _eventHandlers)[name] instanceof Array)) {
             __classPrivateFieldGet(this, _eventHandlers)[name] = [];
@@ -114,4 +123,3 @@ class SmartMap {
     }
 }
 exports.SmartMap = SmartMap;
-_indices = new WeakMap(), _length = new WeakMap(), _data = new WeakMap(), _keys = new WeakMap(), _eventHandlers = new WeakMap(), _debug = new WeakMap();

@@ -1,18 +1,44 @@
 export type EventType = 'added' | 'deleted' | 'cleared';
 
-export class SmartMap<T> {
-  #indices: string[] = [];
+export class SmartMap<T> implements Iterable<T> {
   #length: number = 0;
-  #data: { [key: string]: T[] } = {};
-  #keys: any = {};
-  #eventHandlers: { [key: string]: ((options?: any) => void)[] } = {};
+  #indices: (keyof T)[] = [];
+  #data: { [key in keyof T]?: T[] } = {};
+  #keys: {
+    [key in (keyof T)]?: {
+      [value: string]: T
+    }
+  } = {};
 
-  constructor(...indices: string[]) {
+  #_eventHandlers: { [key: string]: ((options?: any) => void)[] } = {};
+  #_iterateBy: keyof T;
+
+  constructor(...indices: (keyof T)[]) {
     if (!indices || !indices.length) {
       throw new Error('Unable to initialize SmartMap, no indices provided.');
     }
 
     this.#indices.push(...indices);
+
+    this.#_iterateBy = this.#indices[0];
+  }
+
+  [Symbol.iterator](): Iterator<T> {
+    const indexedArray = this.#data[this.#_iterateBy] as T[];
+    
+    let iteratorCurrentIndex = 0;
+    
+    return {
+      next() {
+        iteratorCurrentIndex++;
+
+        if (iteratorCurrentIndex - 1 < indexedArray.length) {
+          return { value: indexedArray[iteratorCurrentIndex - 1], done: false };
+        } else {
+          return { value: null, done: true };
+        }
+      }
+    };
   }
 
   get indices() {
@@ -23,37 +49,55 @@ export class SmartMap<T> {
     return this.#length;
   }
 
-  add(object: any) {
-    const sealedObject = Object.seal(object);
+  iterateBy(index: keyof T) {
+    if (this.#indices.indexOf(index) !== -1) {
+      this.#_iterateBy = index;
 
-    this.#indices.forEach(index => {
-      if (!(index in this.#keys)) {
-        this.#keys[index] = {};
-      }
+      return this;
+    }
 
-      if (index in object) {
-        const key = object[index];
-
-        if (!this.#data[index]) {
-          this.#data[index] = [];
-        }
-
-        this.#data[index].push(sealedObject);
-        this.#keys[index][key] = sealedObject;
-
-        this.fire('added', object);
-      } else {
-        throw new Error(`Index ${index} doesn't exist in given object.`);
-      }
-    });
-
-    this.#length++;
+    throw new Error(`Map is not indexed by '${index}'`);
   }
 
-  get(key: string | number, index: string): T | undefined {
+  add(...objects: T[]) {
+    if (objects && objects.length) {
+      objects.forEach(object => {
+        const sealedObject = Object.seal(object);
+
+        this.#indices.forEach(index => {
+          if (!(index in this.#keys)) {
+            this.#keys[index] = {};
+          }
+
+          if (index in object) {
+            const key = object[index] as unknown as string;
+
+            if (!this.#data[index]) {
+              this.#data[index] = [];
+            }
+
+            this.getIndexedDataArray(index).push(sealedObject);
+            this.getIndexedKeyDataArray(index)[key] = sealedObject;
+
+            this.fire('added', object);
+          } else {
+            throw new Error(`Index ${index} doesn't exist in a given object.`);
+          }
+        });
+      })
+    } else {
+      throw new Error(`Failed to add object`);
+    }
+
+    this.#length += objects.length;
+  }
+
+  get(key: string | number, index: keyof T): T | undefined {
     if (index in this.#keys) {
-      if (key in this.#keys[index]) {
-        return this.#keys[index][key];
+      const indexedKeyDataArray = this.getIndexedKeyDataArray(index);
+
+      if (key in indexedKeyDataArray) {
+        return indexedKeyDataArray[key];
       } else {
         return undefined;
       }
@@ -62,15 +106,18 @@ export class SmartMap<T> {
     }
   }
 
-  delete(key: string | number, index: string) {
+  delete(key: string | number, index: keyof T) {
     if (index in this.#keys && key in this.#keys[index]) {
-      const node = this.#keys[index][key];
-      const indexOfNode = this.#data[index].indexOf(node);
+      const indexedDataArray = this.getIndexedDataArray(index);
+      const indexedKeyDataArray = this.getIndexedKeyDataArray(index);
+
+      const node = indexedKeyDataArray[key];
+      const indexOfNode = indexedDataArray.indexOf(node);
 
       if (indexOfNode !== -1) {
-        this.#data[index].splice(indexOfNode, 1);
+        indexedDataArray.splice(indexOfNode, 1);
         
-        delete this.#keys[index][key];
+        delete indexedKeyDataArray[key];
 
         this.#length--;
 
@@ -91,46 +138,26 @@ export class SmartMap<T> {
     this.fire('cleared');
   }
 
-  forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any) {
-    if (this.#length) {
-      const iterateBy = this.#indices[0];
-
-      this.#data[iterateBy].forEach(callbackfn, thisArg || this);
-    }
-  }
-
-  find(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): T | undefined {
-    if (this.#length) {
-      const iterateBy = this.#indices[0];
-
-      return this.#data[iterateBy].find(predicate, thisArg || this);
-    }
-
-    return undefined;
-  }
-
-  map(callbackfn: (value: T, index: number, array: T[]) => any, thisArg?: any): any[] {
-    if (this.#length) {
-      const iterateBy = this.#indices[0];
-
-      return this.#data[iterateBy].map(callbackfn, thisArg || this);
-    }
-
-    return [];
-  }
-
   on(name: EventType, listener: (options?: any) => void) {
-    if (!(name in this.#eventHandlers) || !(this.#eventHandlers[name] instanceof Array)) {
-      this.#eventHandlers[name] = [];
+    if (!(name in this.#_eventHandlers) || !(this.#_eventHandlers[name] instanceof Array)) {
+      this.#_eventHandlers[name] = [];
     }
-    this.#eventHandlers[name].push(listener);
+    this.#_eventHandlers[name].push(listener);
 
     return this;
   }
 
   fire(name: EventType, options?: any) {
-    if (name in this.#eventHandlers && this.#eventHandlers[name].length > 0) {
-      this.#eventHandlers[name].forEach(handler => handler(options));
+    if (name in this.#_eventHandlers && this.#_eventHandlers[name].length > 0) {
+      this.#_eventHandlers[name].forEach(handler => handler(options));
     }
+  }
+
+  private getIndexedDataArray(index: keyof T) {
+    return this.#data[index] as T[];
+  }
+
+  private getIndexedKeyDataArray(index: keyof T) {
+    return this.#keys[index] as { [value: string]: T };
   }
 }

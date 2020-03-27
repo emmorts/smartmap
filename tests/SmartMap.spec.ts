@@ -108,40 +108,23 @@ describe('#SmartMap', () => {
   
   it('should iterate through the map', () => {
     const smartMap = new SmartMap<TestInterface>('id');
-    const expectedObjects: TestInterface[] = [];
 
-    [1, 2, 3].forEach(num => {
-      const obj = {
-        id: num,
-        value: num * num
-      };
-      smartMap.add(obj);
-      expectedObjects.push(obj);
-    });
+    const array = [1, 2, 3];
+
+    [1, 2, 3].forEach(num => smartMap.add({
+      id: num,
+      value: num ** 2
+    }));
     
-    smartMap.forEach(mapObject => {
-      const expectedObject = expectedObjects.find(object => object.id === mapObject.id);
-      
-      expect(mapObject).to.be.equal(expectedObject);
-    });
-  });
-  
-  it('should map through the map', () => {
-    const smartMap = new SmartMap<TestInterface>('id');
-    const expectedObjects: TestInterface[] = [];
+    let iterator = 0;
+    for (const mapObject of smartMap) {
+      const { id, value } = mapObject
 
-    [1, 2, 3].forEach(num => {
-      const obj = {
-        id: num,
-        value: num * num
-      };
-      smartMap.add(obj);
-      expectedObjects.push(obj);
-    });
-    
-    const values = smartMap.map(object => object.value);
+      expect(id).to.eq(array[iterator]);
+      expect(value).to.be.equal(array[iterator] ** 2);
 
-    expect(values).to.deep.eq([1, 4, 9]);
+      iterator++;
+    };
   });
   
   it('should iterate through the map with multiple indices', () => {
@@ -156,16 +139,22 @@ describe('#SmartMap', () => {
       map.add(obj);
       expectedObjects.push(obj);
     });
-    
-    map.forEach(mapObject => {
+
+    for (const mapObject of map.iterateBy('id')) {
       const expectedObject = expectedObjects.find(object => object.id === mapObject.id);
       
       expect(mapObject).to.be.equal(expectedObject);
-    });
+    }
+
+    for (const mapObject of map.iterateBy('value')) {
+      const expectedObject = expectedObjects.find(object => object.id === mapObject.id);
+      
+      expect(mapObject).to.be.equal(expectedObject);
+    }
   });
   
   it('should iterate through the map after removing an element', () => {
-    const map = new SmartMap<TestInterface>('id');
+    const smartMap = new SmartMap<TestInterface>('id');
     const expectedObjects: TestInterface[] = [];
 
     [1, 2, 3].forEach(num => {
@@ -173,41 +162,23 @@ describe('#SmartMap', () => {
         id: num,
         value: num * num
       };
-      map.add(obj);
+      smartMap.add(obj);
       expectedObjects.push(obj);
     });
 
-    map.delete(3, 'id');
+    smartMap.delete(3, 'id');
 
     let iterationsCompleted = 0;
 
-    map.forEach(mapObject => {
+    for (const mapObject of smartMap) {
       const expectedObject = expectedObjects.find((object) => object.id === mapObject.id);
 
       expect(mapObject).to.be.equal(expectedObject);
 
       iterationsCompleted++;
-    });
+    }
 
     expect(iterationsCompleted).to.be.equal(expectedObjects.length - 1);
-  });
-  
-  it('should find an object in the map', () => {
-    const map = new SmartMap<TestInterface>('id');
-    const expectedObjects: TestInterface[] = [];
-
-    [1, 2, 3].forEach(num => {
-      const obj = {
-        id: num,
-        value: num * num
-      };
-      map.add(obj);
-      expectedObjects.push(obj);
-    });
-    
-    const foundObject = map.find(mapObject => mapObject.id === expectedObjects[0].id);
-    
-    expect(expectedObjects[0]).to.be.equal(foundObject);
   });
 
 });

@@ -1,11 +1,11 @@
 {
   "name": "smartmap",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Fast multiple key map",
   "main": "./dist/index.js",
   "types": "./dist/index.d.js",
   "scripts": {
-    "test": "ts-mocha ./test/*.spec.ts",
+    "test": "ts-mocha ./tests/*.spec.ts",
     "build": "tsc",
     "typedoc": "typedoc",
     "posttypedoc": "shx cp .nojekyll docs/.nojekyll"
