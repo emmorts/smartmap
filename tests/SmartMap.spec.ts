@@ -105,13 +105,89 @@ describe('#SmartMap', () => {
     expect(object).to.be.equal(undefined);
     expect(map.length).to.be.equal(0);
   });
+
+  it('should test whether map conntains an element', () => {
+    const smartMap = new SmartMap<TestInterface>('id');
+
+    [1, 2, 3].forEach(num => smartMap.add({
+      id: num,
+      value: num ** 2
+    }));
+
+    expect(smartMap.contains(0)).to.be.false;
+    expect(smartMap.contains(1)).to.be.true;
+  });
+
+  it('should fire \'added\' event on element add', () => {
+    const smartMap = new SmartMap<TestInterface>('id');
+    
+    const array = [1, 2, 3];
+    let eventsFired = 0;
+
+    smartMap.on("added", (element: TestInterface) => {
+      expect(element.id).eq(array[eventsFired]);
+      expect(element.value).eq(array[eventsFired] ** 2);
+      
+      eventsFired++;
+    });
+
+    array.forEach(num => smartMap.add({
+      id: num,
+      value: num ** 2
+    }));
+
+    expect(eventsFired).to.be.eq(3);
+  });
+
+  it('should fire \'deleted\' event on element removal', () => {
+    const smartMap = new SmartMap<TestInterface>('id');
+    
+    const array = [1, 2, 3];
+    let eventsFired = 0;
+
+    smartMap.on("deleted", (element: TestInterface) => {
+      expect(element.id).eq(array[eventsFired]);
+      expect(element.value).eq(array[eventsFired] ** 2);
+      
+      eventsFired++;
+    });
+
+    array.forEach(num => smartMap.add({
+      id: num,
+      value: num ** 2
+    }));
+    
+    smartMap.delete(1);
+    smartMap.delete(2);
+
+    expect(eventsFired).to.be.eq(2);
+  });
+
+  it('should fire \'deleted\' event on element removal', () => {
+    const smartMap = new SmartMap<TestInterface>('id');
+    
+    let eventFired = false;
+
+    smartMap.on("cleared", () => {
+      eventFired = true;
+    });
+
+    [1, 2, 3].forEach(num => smartMap.add({
+      id: num,
+      value: num ** 2
+    }));
+    
+    smartMap.clear();
+
+    expect(eventFired).to.be.true;
+  });
   
   it('should iterate through the map', () => {
     const smartMap = new SmartMap<TestInterface>('id');
 
     const array = [1, 2, 3];
 
-    [1, 2, 3].forEach(num => smartMap.add({
+    array.forEach(num => smartMap.add({
       id: num,
       value: num ** 2
     }));

@@ -1,6 +1,6 @@
 {
   "name": "smartmap",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Fast multiple key map",
   "main": "./dist/index.js",
   "types": "./dist/index.d.js",
@@ -8,6 +8,7 @@
     "test": "ts-mocha ./tests/*.spec.ts",
     "build": "tsc",
     "typedoc": "typedoc",
+    "coverage": "nyc --reporter=lcov npm run test",
     "posttypedoc": "shx cp .nojekyll docs/.nojekyll"
   },
   "repository": {
@@ -28,6 +29,7 @@
   },
   "homepage": "https://github.com/emmorts/smartmap#readme",
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
     "chai": "^3.5.0",

@@ -92,7 +92,11 @@ export class SmartMap<T> implements Iterable<T> {
     this.#length += objects.length;
   }
 
-  get(key: string | number, index: keyof T): T | undefined {
+  contains(key: T[keyof T], index: keyof T = this.#indices[0]): boolean {
+    return index in this.#keys && (key as unknown as string) in this.getIndexedKeyDataArray(index);
+  }
+
+  get(key: string | number, index: keyof T = this.#indices[0]): T | undefined {
     if (index in this.#keys) {
       const indexedKeyDataArray = this.getIndexedKeyDataArray(index);
 
@@ -106,13 +110,15 @@ export class SmartMap<T> implements Iterable<T> {
     }
   }
 
-  delete(key: string | number, index: keyof T) {
+  delete(key: string | number, index: keyof T = this.#indices[0]) {
+    const keys = this.#keys;
+    
     if (index in this.#keys && key in this.#keys[index]) {
       const indexedDataArray = this.getIndexedDataArray(index);
       const indexedKeyDataArray = this.getIndexedKeyDataArray(index);
 
-      const node = indexedKeyDataArray[key];
-      const indexOfNode = indexedDataArray.indexOf(node);
+      const object = indexedKeyDataArray[key];
+      const indexOfNode = indexedDataArray.indexOf(object);
 
       if (indexOfNode !== -1) {
         indexedDataArray.splice(indexOfNode, 1);
@@ -121,10 +127,10 @@ export class SmartMap<T> implements Iterable<T> {
 
         this.#length--;
 
-        this.fire('deleted', node);
+        this.fire('deleted', object);
       }
 
-      return node;
+      return object;
     }
     
     return undefined;
